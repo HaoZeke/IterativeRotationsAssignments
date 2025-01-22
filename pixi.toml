@@ -10,6 +10,7 @@ version = "0.1.0"
 build_lib = { cmd = "make all", cwd = "src", env = { LIBLAPACK = "-lopenblas" } }
 
 [activation]
+# TODO: Fix the pwd
 env = { PYTHONPATH = "$PYTHONPATH:$(pwd)/interface" }
 
 [dependencies]
