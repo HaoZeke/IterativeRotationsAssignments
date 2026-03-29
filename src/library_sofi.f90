@@ -125,8 +125,25 @@ subroutine libira_compute_all( nat, typ, coords, sym_thr, prescreen_ih, &
   integer :: len_opstr
   logical :: early_ih
 
-  ! write(*,*) "entering lib"
-  !! local arrays for computation
+  !! Validate that output pointers are not null.
+  !! The caller must pre-allocate all output arrays with size nmax
+  !! (use libira_get_nmax() to query the required size).
+  cerr = 0
+  if( .not. c_associated(mat_list) .or. &
+      .not. c_associated(perm_list) .or. &
+      .not. c_associated(op_list) .or. &
+      .not. c_associated(n_list) .or. &
+      .not. c_associated(p_list) .or. &
+      .not. c_associated(ax_list) .or. &
+      .not. c_associated(angle_list) .or. &
+      .not. c_associated(dHausdorff_list) .or. &
+      .not. c_associated(pg) .or. &
+      .not. c_associated(prin_ax) ) then
+     cerr = -99
+     write(*,*) "libira_compute_all: output arrays must be pre-allocated"
+     write(*,*) "  Use libira_get_nmax() to query the required allocation size"
+     return
+  end if
 
   !!
   !! receive input
@@ -970,3 +987,22 @@ subroutine libira_check_collinear( nat, coords, collinear, ax )bind(C,name="libi
   call sofi_check_collinear( nat, pcoords, coll, pax )
   collinear = logical( coll, c_bool )
 end subroutine libira_check_collinear
+
+
+!> @details
+!! Return the value of nmax from sofi_tools.f90.
+!! Callers of libira_compute_all must pre-allocate all output arrays
+!! to at least this size.
+!!
+!! C-header:
+!! ~~~~~~~~~~~~~~~{.c}
+!! int libira_get_nmax(void);
+!! ~~~~~~~~~~~~~~~
+!!
+function libira_get_nmax() result(val) bind(C, name="libira_get_nmax")
+  use, intrinsic :: iso_c_binding
+  use sofi_tools, only: nmax
+  implicit none
+  integer(c_int) :: val
+  val = int(nmax, c_int)
+end function libira_get_nmax

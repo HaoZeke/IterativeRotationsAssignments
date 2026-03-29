@@ -29,6 +29,9 @@ void libira_cshda_svd( int nat1, int* typ1, double* coords1, \
 void libira_get_version( char *string, int *date );
 
 
+/* Maximum number of symmetry operations (from sofi_tools.f90) */
+int libira_get_nmax(void);
+
 /* declare functions from library_sofi.f90 */
 void libira_compute_all( int nat, int *typ, double *coords, double sym_thr, int prescreen_ih, \
                          int *n_mat, double **mat_data, int **perm_data, \
