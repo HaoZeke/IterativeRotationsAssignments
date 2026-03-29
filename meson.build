@@ -23,7 +23,9 @@ endif
 
 fortran_args = []
 if fc.get_id() == 'gcc'
-  fortran_args += '-ffree-line-length-none'
+  fortran_args += ['-ffree-line-length-none', '-cpp']
+elif fc.get_id() == 'intel' or fc.get_id() == 'intel-llvm'
+  fortran_args += '-fpp'
 endif
 
 ira_sources = files(
