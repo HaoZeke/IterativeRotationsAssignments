@@ -13,7 +13,13 @@ project('ira', ['c', 'fortran'],
 
 fc = meson.get_compiler('fortran')
 
-lapack_dep = dependency('lapack', required: true)
+lapack_dep = dependency('lapack', required: false)
+if not lapack_dep.found()
+  lapack_dep = dependency('lapack', method: 'cmake', required: false)
+endif
+if not lapack_dep.found()
+  lapack_dep = fc.find_library('lapack', required: true)
+endif
 
 fortran_args = []
 if fc.get_id() == 'gcc'
