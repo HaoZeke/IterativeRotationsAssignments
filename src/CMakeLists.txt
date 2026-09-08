@@ -28,7 +28,7 @@ set_target_properties(ira PROPERTIES
   Fortran_FORMAT FREE
   POSITION_INDEPENDENT_CODE ON
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/lib"
-  NO_SONAME 1
+  NO_SONAME 0
   )
 
 # link lapack
