@@ -1,6 +1,6 @@
 
-# compiler flags (for this dir and below)
-add_compile_options(-ffree-line-length-none -march=native -funroll-loops -ffast-math -Ofast)
+# Free-form sources permit long expressions; optimization follows the toolchain.
+add_compile_options($<$<COMPILE_LANG_AND_ID:Fortran,GNU>:-ffree-line-length-none>)
 
 
 # set module directory to root/include
