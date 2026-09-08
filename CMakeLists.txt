@@ -40,9 +40,10 @@ set(ira_version ${CMAKE_MATCH_1})
 project(IRA
 	VERSION ${ira_version}
 	DESCRIPTION "Algorithms for Iterative Rotations and Assignments (IRA); Symmetry Operations FInder (SOFI); and Constrained Shortest Distance Assignment (CShDA)."
-  LANGUAGES Fortran)
+  LANGUAGES C Fortran)
 enable_language(Fortran)
 
+# C enables the thread dependency checks required by static BLAS.
 # find lapack/blas
 find_package(LAPACK REQUIRED)
 ## TODO: if(NOT FOUND LAPACK) compile and link local
