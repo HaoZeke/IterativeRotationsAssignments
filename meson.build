@@ -19,6 +19,9 @@ if not lapack_dep.found()
   lapack_dep = dependency('lapack', method: 'cmake', required: false)
 endif
 if not lapack_dep.found()
+  lapack_dep = dependency('openblas', required: false)
+endif
+if not lapack_dep.found()
   lapack_dep = fc.find_library('lapack', required: true)
 endif
 
