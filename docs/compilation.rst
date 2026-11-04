@@ -24,12 +24,76 @@ Then you can directly use it:
    >>> sofi = ira_mod.SOFI()
 
 
+``conda`` installation
+----------------------
+
+Using the conda-forge channel, you can download and install the ``ira_mod`` python module by:
+
+.. code-block:: bash
+
+   conda install ira
+
+
 Other build tools
 -----------------
+
+The C interface declares ``libira_get_version(char *, long *)``. Its version
+buffer holds six bytes, including the terminating null character. The date
+uses C ``long``; callers using the older ``int`` declaration must update that
+argument. ``libira_get_nmax()`` remains available for sizing SOFI output arrays.
 
 Other build tools are available, use one of the following:
 
 .. tab-set::
+
+
+   .. tab-item:: Using ``cmake`` (recommened)
+
+      To install with ``cmake``, execute:
+
+      .. code-block:: bash
+
+         cmake -B builddir
+         cmake --build builddir
+
+      This will produce directories ``lib`` and ``include`` in the builddir path specified, they will contain
+      the static library ``libira.a`` and the fortran module files, respectively.
+      If you wish to compile the shared library, configure the build with ``-DBUILD_SHARED_LIBS=ON``:
+
+      .. code-block:: bash
+
+         cmake -B builddir -DBUILD_SHARED_LIBS=ON
+         cmake --build builddir
+
+      The available options are:
+
+      * ``-DIRA_BUILD_TESTS``: build some simple tests (default OFF);
+      * ``-DIRA_ENABLE_NATIVE_OPTIMIZATION`` pass the compiler flags "-march=native -ffast-math" or equivalent (default OFF). Architecture and optimization otherwise follow the configured toolchain.
+
+      To install the library and module files to a particular location, do:
+
+      .. code-block:: bash
+
+         cmake -B builddir -DCMAKE_INSTALL_PREFIX=your/install/path
+         cmake --build builddir
+         cmake --install builddir
+
+      This will copy the ``lib`` and ``include`` directories and their contents to ``your/install/path``, and create files needed for other ``CMake`` and/or ``pkg-config`` based projects to find the library.
+
+      .. admonition:: python module ``ira_mod``
+         :class: tip
+
+         To use the python module, you will need to pass the ``-DIRA_INSTALL_PYTHON=ON``, install the
+         library somewhere, and set the ``PYTHONPATH`` variable to that same path with adding ``/ira_mod``:
+
+         .. code-block::
+
+            cmake -B builddir -DIRA_INSTALL_PYTHON=ON -DCMAKE_INSTALL_PREFIX=your/install/path
+            cmake --build builddir
+            cmake --install builddir
+            export PYTHONPATH=your/install/path/ira_mod
+
+
 
    .. tab-item:: Traditional ``make``
 
@@ -79,7 +143,7 @@ Other build tools are available, use one of the following:
             export PYTHONPATH=/path/to/IRA/interface:$PYTHONPATH
 
 
-   .. tab-item:: ``conda`` compatible build
+   .. tab-item:: Using ``pixi``
 
       For local machines, it is possible to use ``pixi`` [pixi-install]_ to get a working version of the
       Python bindings in a fairly automated manner.
@@ -94,26 +158,6 @@ Other build tools are available, use one of the following:
          python python_program.py
 
       .. [pixi-install] Installation instructions here: `<https://pixi.sh/latest/>`_
-
-
-   .. tab-item:: Using ``cmake``
-
-      To install with ``cmake``, it is assumed you have the ``lapack`` or ``blas`` library installed on your system.
-
-      .. code-block:: bash
-
-         cmake -B builddir
-         cmake --build builddir
-
-      .. admonition:: python module ``ira_mod``
-         :class: tip
-
-         To use the python module, you will need to set the ``PYTHONPATH`` variable:
-
-         .. code-block::
-
-            export PYTHONPATH=/path/to/IRA/interface:$PYTHONPATH
-
 
 
    .. tab-item:: Using ``fpm``
@@ -139,27 +183,96 @@ Other build tools are available, use one of the following:
 Linking a program to libira
 ===========================
 
-A program compiled with ``gcc`` or ``gfortran`` can easily link the IRA library, as-is, by linking either the shared
-library ``libira.so``, or the static version ``libira.a``. They are both located in the ``lib/`` directory after
-compilation. The module files are located in ``include/``.
+Linking a program to ``libira`` is simple, however note that:
 
-Example for fortran program:
+* The base-level implementations are not placed in modules, therefore all routines are in principle acessible to the
+  caller. Care must be taken to ensure the correct type, kind, shape, etc. of the arguments, i.e. interface matching
+  needs to be checked manually;
+* The default precision is equivalent to ``c_int`` for integers, and ``c_double`` for reals, they are defined in
+  the ``IRA/src/ira_precision.f90`` module.
 
-.. code-block:: bash
 
-   gfortran -o caller_program.x caller_program.f90 -L/your/path/to/IRA/lib/ -lira -Wl,-rpath,/your/path/to/IRA/lib
+.. tab-set::
+   .. tab-item:: Using ``cmake`` (recommended)
 
-The base-level implementations are not placed in modules, therefore all routines are in principle acessible to the
-caller. Care must be taken to ensure the correct type, kind, shape, etc. of the arguments, i.e. interface matching
-needs to be checked manually.
-The default precision is equivalent to ``c_int`` for integers, and ``c_double`` for reals, they are defined in ``IRA/src/ira_precision.f90`` module.
+      To link your Fortran or C target in CMake with ``libira``, it suffices to add IRA project
+      into your ``CMakeLists.txt`` project by one of the following methods:
 
-The C-headers are located in the ``IRA/interface`` directory, and can be included in compilation by ``-I/your/path/to/IRA/interface``.
+      * To include IRA as part of the build process of your program:
 
-When linking the static library ``libira.a`` to a C-program, you need to add the math (``-lm``), and fortran (``-lgfortran``, or equivalent) to the compilation:
+        * With ``FetchContent`` as:
 
-.. code-block:: bash
+          .. code-block:: cmake
 
-   gcc -I/your/path/IRA/interface -o c_prog.x c_prog.c -L/your/path/to/IRA/src -lira -Wl,-rpath,/your/path/to/IRA/src -lm -lgfortran
+             # add IRA via FetchContent:
+             include( FetchContent )
+             FetchContent_Declare( ira_git
+               GIT_REPOSITORY https://github.com/mammasmias/IterativeRotationsAssignments.git
+               GIT_TAG master
+               GIT_SHALLOW 1
+               )
+             FetchContent_MakeAvailable( ira_git )
+
+             # link it to your target:
+             target_link_libraries( your-target PRIVATE ira::ira )
+
+        * With ``add_subdirectory()`` as submodule as:
+
+          .. code-block:: cmake
+
+             # i.e. IRA is a submodule located in a directory 'path/to/IRA'
+             add_subdirectory( path/to/IRA )
+
+             # link it to your target:
+             target_link_libraries( your-target PRIVATE ira::ira )
+
+      * To include an already-compiled IRA somewhere on your machine:
+
+        * With ``include()`` to locate the exported targets file. Note, IRA exports a config file during the build step, located in the binary/cmake/ira dir, and during install step located in the install/lib/cmake/ira dir.
+
+          .. code-block:: cmake
+
+             # using include() with the build directory:
+             include( path-to-ira-build/cmake/ira/ira-BuildConfig.cmake )
+
+             # using include() with the install directory:
+             include( path-to-ira-install/lib/cmake/ira/ira-config.cmake )
+
+             # link to your target:
+             target_link_libraries( your-target PRIVATE ira::ira )
+
+        * Or with ``find_package()`` as:
+
+          .. code-block:: cmake
+
+             # using find_package() with the build directory:
+             find_package( ira HINTS path-to-ira-build/cmake/ira NAMES ira-Build )
+
+             # using find_package() with the install directory:
+             find_package( ira HINTS path-to-ira-install )
+
+             # link to your target:
+             target_link_libraries( your-target PRIVATE ira::ira )
+
+
+   .. tab-item:: Using traditional ``make``
+
+      A program compiled with ``gcc`` or ``gfortran`` can easily link the IRA library, as-is, by linking either the shared
+      library ``libira.so``, or the static version ``libira.a``. They are both located in the ``lib/`` directory after
+      compilation. The module files are located in ``include/``.
+
+      Example for fortran program:
+
+      .. code-block:: bash
+
+         gfortran -o caller_program.x caller_program.f90 -L/your/path/to/IRA/lib/ -lira -Wl,-rpath,/your/path/to/IRA/lib
+
+      The C-headers are located in the ``IRA/interface`` directory, and can be included in compilation by ``-I/your/path/to/IRA/interface``.
+
+      When linking the static library ``libira.a`` to a C-program, you need to add the math (``-lm``), and fortran (``-lgfortran``, or equivalent) to the compilation:
+
+      .. code-block:: bash
+
+         gcc -I/your/path/IRA/interface -o c_prog.x c_prog.c -L/your/path/to/IRA/src -lira -Wl,-rpath,/your/path/to/IRA/src -lm -lgfortran
 
 

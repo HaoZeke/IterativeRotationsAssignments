@@ -13,136 +13,11 @@
 !! limitations under the License.
 !!
 
+module m_cshda
 
-!> @cond SKIP
-  module ira_pbc
-
-    !! routines for computing a vector in periodic boundary condtions
-    use ira_precision
-    implicit none
-    private
-    public :: pbc_vec
-
-    contains
-
-      subroutine pbc_vec( vec, lat )
-        !! apply pbc of lattice 'lat' to a vector 'vec'
-        implicit none
-        real(rp), dimension(3), intent(inout) :: vec
-        real(rp), dimension(3,3), intent(in) :: lat
-
-        call cart_to_crist( vec, lat )
-        call periodic( vec )
-        call crist_to_cart( vec, lat )
-
-      end subroutine pbc_vec
-
-      subroutine periodic(c)
-        !--------------------------------
-        ! periodic boundary condition, for 3 dimensional vector input in crist coords.
-        !--------------------------------
-        implicit none
-        real(rp), dimension(3),intent(inout) :: c
-        integer(ip) :: i
-
-        do i = 1, 3
-          if( c(i) .lt. -0.5_rp ) c(i) = c(i) + 1.0_rp
-          if( c(i) .ge. 0.5_rp ) c(i) = c(i) - 1.0_rp
-        end do
-
-      end subroutine periodic
-
-
-      subroutine cart_to_crist(xpp,ct)
-        !!----------------------------
-        !! cartesian to crystallographic coordinates transform, in 3-dimension
-        !! v_crist = B^-1 * R_cart; where B is the matrix formed by unit cell vectors
-        !! This routine does the transpose of B implicitly
-        !! --------
-        !! xpp(3)      ==> input vector of position in cartesian
-        !! ct(3,3)     ==> conversion matrix, vectors of the Bravais lattice in rows
-        !!
-        !!      ct = a1 a2 a3
-        !!           b1 b2 b3
-        !!           c1 c2 c3
-        !!----------------------------
-        !! bt(3,3) ==> inverse matrix of ct, used locally
-        !! xc(3)   ==> copy of xpp, used locally
-        !! detct   ==> determinant of ct, used locally
-        !!
-        implicit none
-        real(rp), dimension(3),   intent(inout) :: xpp
-        real(rp), dimension(3,3), intent(in)    :: ct
-
-        real(rp),dimension(3) :: xc
-        real(rp) :: detct
-        real(rp), dimension(3,3) :: bt
-
-        ! -----------------------------------------------
-        !  inverse matrix of ct(:,:)
-        !------------------------------------------------
-        detct=ct(1,1)*ct(2,2)*ct(3,3)+&
-              ct(1,2)*ct(2,3)*ct(3,1)+&
-              ct(2,1)*ct(3,2)*ct(1,3)&
-              -ct(1,3)*ct(2,2)*ct(3,1)&
-              -ct(3,2)*ct(2,3)*ct(1,1)&
-              -ct(1,2)*ct(2,1)*ct(3,3)
-
-        bt(1,1)= ct(2,2)*ct(3,3)-ct(2,3)*ct(3,2)
-        bt(1,2)=-(ct(1,2)*ct(3,3)-ct(1,3)*ct(3,2))
-        bt(1,3)= ct(1,2)*ct(2,3)-ct(1,3)*ct(2,2)
-        bt(2,1)=-(ct(2,1)*ct(3,3)-ct(2,3)*ct(3,1))
-        bt(2,2)= ct(1,1)*ct(3,3)-ct(3,1)*ct(1,3)
-        bt(2,3)=-(ct(1,1)*ct(2,3)-ct(1,3)*ct(2,1))
-        bt(3,1)= ct(2,1)*ct(3,2)-ct(2,2)*ct(3,1)
-        bt(3,2)=-(ct(1,1)*ct(3,2)-ct(1,2)*ct(3,1))
-        bt(3,3)= ct(1,1)*ct(2,2)-ct(2,1)*ct(1,2)
-        !------------------------------------------------
-
-        xc(1) = (xpp(1)*bt(1,1)+xpp(2)*bt(2,1)+xpp(3)*bt(3,1))/detct
-        xc(2) = (xpp(1)*bt(1,2)+xpp(2)*bt(2,2)+xpp(3)*bt(3,2))/detct
-        xc(3) = (xpp(1)*bt(1,3)+xpp(2)*bt(2,3)+xpp(3)*bt(3,3))/detct
-
-        xpp(:) = xc(:)
-
-      end subroutine cart_to_crist
-
-
-      subroutine crist_to_cart(xpp,bt)
-        !!--------------------------------
-        !! crystallographic to cartesian transformation in 3-dimensions
-        !! R_cart = B * v_crist; where B is the matrix formed by cell vectors vertically
-        !! This routine does the transpose implicitly!
-        !! -----------
-        !! xpp(3)    ==> input vector in crystallographic, output vector in cartesian
-        !! bt(3,3)   ==> input conversion matrix, vectors of the Bravais lattice in rows
-        !!
-        !!         bt = a1 a2 a3
-        !!              b1 b2 b3
-        !!              c1 c2 c3
-        !!-----
-        !! xc(3)   ==> local vector
-        !!
-        implicit none
-
-        real(rp), dimension(3),   intent(inout) :: xpp
-
-        real(rp), dimension(3,3), intent(in)    :: bt
-        real(rp), dimension(3) :: xc
-
-
-        xc(1) = (xpp(1)*bt(1,1)+xpp(2)*bt(2,1)+xpp(3)*bt(3,1))
-        xc(2) = (xpp(1)*bt(1,2)+xpp(2)*bt(2,2)+xpp(3)*bt(3,2))
-        xc(3) = (xpp(1)*bt(1,3)+xpp(2)*bt(2,3)+xpp(3)*bt(3,3))
-
-        xpp(:) = xc(:)
-
-      end subroutine crist_to_cart
-
-  end module
-!> @endcond
-
-
+  implicit none
+  public
+contains
 
   !> @details
   !! Linear Assignment Problem (LAP) algorithm:
@@ -197,7 +72,7 @@
     integer(ip), dimension(nat1) :: tmpmin
 
     !! init output
-    dists = 999.9_rp
+    dists = huge(dists)
     found = 0
 
     !!
@@ -220,7 +95,7 @@
           !! if the atoms are not of same typ, set large value for distance:
           !! like this they will not be found assigned
           !!
-          if( ti .eq. typ2(j) ) then
+          if( ti == typ2(j) ) then
              !!
              cj = coords2(:,j)
              !!
@@ -236,12 +111,12 @@
              !!
              !! keep for minimum row
              dmin = min( dmin, dist )
-             ! if( dist .lt. dmin ) then
+             ! if( dist < dmin ) then
              !    dmin = dist
              !    tmpmin(i) = j
              ! end if
           else
-             chkmat(j,i) = 995.0_rp
+             chkmat(j,i) = huge(1.0_rp)
           end if
           !!
        end do
@@ -250,9 +125,9 @@
        !! if any row chkmat(i,:) has all values above some_threshold,
        !! then there is no way that Hausdorff distance be lower than some_threshold.
        !! This criterion is used for early return of cshda.
-       if( dmin .gt. th2 ) then
+       if( dmin > th2 ) then
           return
-       endif
+      end if
        !!
     end do
 
@@ -288,6 +163,7 @@
   ! subroutine cshda_from_cost( n2, n1, chkmat, found, dists )
   subroutine cshda_from_cost( n2, n1, cost, found, dists )
     use ira_precision
+    use m_sofi_tools, only: findloc
     implicit none
     integer(ip), intent(in) :: n2
     integer(ip), intent(in) :: n1
@@ -306,7 +182,7 @@
 
     !! init output
     found = 0
-    dists=999.9_rp
+    dists=huge(dists)
 
     !! init tmpmin
     do i = 1, n1
@@ -329,7 +205,7 @@
        !! set index of next search
        !!
        i = findloc( lsearch(:), .true., 1)
-       if( i .eq. 0 ) exit
+       if( i == 0 ) exit
        ! write(*,*) "next i",i
        !!
        !! set next search on this index to .false.
@@ -346,8 +222,8 @@
        !!
        !! check the if we already have this j
        !!
-       ! if( assigned(j) .gt. 0 ) then
-       if( any(found .eq. j) ) then
+       ! if( assigned(j) > 0 ) then
+       if( any(found == j) ) then
           !!
           !!
           !! find the old index where its used, and the old distance
@@ -359,13 +235,13 @@
           ! write(*,*) "j already assigned at", idx_old, dist_old
           ! write(*,"(*(f4.2,:,1x))") dists
           !!
-          if( dist_old .lt. dist ) then
+          if( dist_old < dist ) then
              !!
              !!
              !! if the previous found is closer, set the current distance
              !! to smth big, so its not found ever again!
              !!
-             chkmat(j,i) = 999.0_rp
+             chkmat(j,i) = huge(1.0_rp)
              tmpmin(i) = minloc(chkmat(:,i),1)
              !!
              !!
@@ -379,13 +255,13 @@
              !! if the previous found is larger then the new, the old idx should
              !! be searched again and the same distance should not be found!
              !!
-             chkmat(j, idx_old) = 999.0_rp
+             chkmat(j, idx_old) = huge(1.0_rp)
              lsearch( idx_old ) = .true.
              tmpmin(idx_old) = minloc( chkmat(:,idx_old), 1)
              assigned(idx_old) = 0
              !!
-          endif
-       endif
+         end if
+      end if
        !!
        !! set found data
        !!
@@ -399,10 +275,10 @@
     end do
 
     !! for equal sizes of structures we should be done
-    if( n1 .eq. n2 ) return
+    if( n1 == n2 ) return
 
     !! if any found maps to zero, cshda has exited
-    if( any(found(1:n1) .eq. 0) ) return
+    if( any(found(1:n1) == 0) ) return
 
     ! write(*,*) "found now"
     ! write(*,"(10i3)") found
@@ -412,7 +288,7 @@
     k = n1
     do i = 1, n2
        !! if this i is already found, do nothing
-       if( any(i .eq. found(:) ) ) cycle
+       if( any(i == found(:) ) ) cycle
        !! add this i to last spot
        ! write(*,*) "adding ",i,"to idx k=", k
        k = k + 1
@@ -455,7 +331,7 @@
                    some_thr, found, dists )
 
     use ira_precision
-    use ira_pbc, only: pbc_vec
+    use m_ira_tools, only: pbc_vec
     implicit none
     integer(ip),                  intent(in) :: nat1
     integer(ip), dimension(nat1), intent(in) :: typ1
@@ -502,7 +378,7 @@
           !! if the atoms are not of same typ, set some large distance:
           !! like this they will not be found paired
           !!
-          if( typ1(i) .ne. typ2(j) ) dist = 99990.0_rp
+          if( typ1(i) /= typ2(j) ) dist = 99990.0_rp
           !!
           chkmat(i,j) = dist
           !!
@@ -511,9 +387,9 @@
        !! Early return method:
        !! if all values in the row chkmat(i,:) are above some_threshold, there
        !! is no way that final dH could be below that threshold
-       if( minval(chkmat(i,:)) .gt. some_thr ) then
+       if( minval(chkmat(i,:)) > some_thr ) then
           return
-       endif
+      end if
        !!
     end do
 
@@ -525,17 +401,17 @@
     j = minloc( chkmat(i,:), 1 )
 
     n_count = 1
-    do while( search(i) .gt. 0 )
+    do while( search(i) > 0 )
        !!
        !! return on huge number of searches
        !! ( in worst case do n searches on each of the n sites )
        !!
-       if( n_count .gt. nat1**2) then
+       if( n_count > nat1**2) then
           found(i) = 0
           dists(i) = 999.9_rp
           write(*,*) " PROBLEM in cshda_pbc: huge number of searches"
           return
-       endif
+      end if
        !!
        !!
        !! set next search on this index to 0
@@ -551,7 +427,7 @@
        !!
        !! check the found indices if we already have this j
        !!
-       if( any(found .eq. j) ) then
+       if( any(found == j) ) then
           !!
           !!
           !! find the old index where its used, and the old distance
@@ -559,7 +435,7 @@
           idx_old = minloc( abs( found - j) , 1)
           dist_old = minval( chkmat(idx_old,:), 1)
           !!
-          if( dist_old .lt. dist ) then
+          if( dist_old < dist ) then
              !!
              !!
              !! if the previous found is closer, set the current distance
@@ -581,8 +457,8 @@
              chkmat(idx_old, j) = 999.9_rp
              search( idx_old ) = 1
              !!
-          endif
-       endif
+         end if
+      end if
        !!
        !!
        !! set found data
@@ -603,7 +479,7 @@
     k = nat1
     do i = 1, nat2
        !! if this i is already found, do nothing
-       if( any(i .eq. found(:) ) ) cycle
+       if( any(i == found(:) ) ) cycle
        !! add this i to last spot
        k = k + 1
        found(k) = i
@@ -612,3 +488,4 @@
   end subroutine cshda_pbc
 
 
+end module m_cshda

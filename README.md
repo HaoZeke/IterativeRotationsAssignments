@@ -43,6 +43,12 @@ Python module:
 
 For other build tools and more details, see the [online documentation](https://mammasmias.github.io/IterativeRotationsAssignments/compilation.html).
 
+# Conda build
+
+Using the conda-forge channel:
+
+    conda install ira
+
 
 # Terms and conditions
 The software in this repository is subject to the license(s) provided in the `LICENSE.txt` file.
@@ -55,7 +61,7 @@ Gunde M., Salles N., Hemeryck A., Martin Samos L.
 *IRA: A shape matching approach for recognition and comparison of generic atomic patterns*,
 Journal of Chemical Information and Modeling (2021), DOI:
 [https://doi.org/10.1021/acs.jcim.1c00567](https://doi.org/10.1021/acs.jcim.1c00567),
-HAL: [hal-03406717](https://hal.laas.fr/hal-03406717), arXiv:
+HAL: [hal-03406717](https://laas.hal.science/hal-03406717v1), arXiv:
 [2111.00939](https://export.arxiv.org/abs/2111.00939)
 
 <a id="2">[2]</a>

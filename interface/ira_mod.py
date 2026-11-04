@@ -18,7 +18,7 @@ from ctypes import *
 import numpy as np
 from os.path import dirname,abspath,join,exists
 from inspect import getsourcefile
-
+from glob import glob
 
 class algo():
     """
@@ -49,19 +49,27 @@ class algo():
     """
 
     def __init__(self, shlib='' ):
-        # path to this file
-        mypath=dirname(abspath(getsourcefile(lambda:0)))
-        # one directory up
-        mypath=dirname(mypath)
-        # by default, the lib should be there:
-        path = join(mypath,"lib/libira.so")
-        # if not, try in interface dir (happens when pip install)
-        if(not exists(path) ):
-            path = join(mypath,"ira_mod/lib/libira.so")
-
         if shlib:
-            # user provde path
+            # user provide custom path to lib
             path=shlib
+        else:
+            # find lib based on location of this file
+            # path to this file
+            mydir=dirname(abspath(getsourcefile(lambda:0)))
+
+            # expected name of lib
+            libname = "lib/libira.*"
+
+            # search one dir up (source tree layout) then same dir (installed package layout)
+            path = None
+            for base in [dirname(mydir), mydir]:
+                matches = glob(join(base, libname))
+                if matches:
+                    path = matches[0]
+                    break
+            if path is None:
+                raise FileNotFoundError(f"Could not find shared library '{libname}'")
+
 
         self.lib = CDLL(path)
         self.__version__, self.__date__ = self.get_version()
@@ -84,40 +92,25 @@ class algo():
 
         :meta private:
         """
-        ## get list of unique values
-        u=np.unique(arr1_in)
-        arr1_out=np.ndarray(len(arr1_in), dtype=int)
-        arr2_out=np.ndarray(len(arr2_in), dtype=int)
-        ## find values according to u
-        for i in range(len(arr1_in)):
-            loc = np.where( arr1_in[i] == u)[0]
-            if len(loc) > 0:
-                arr1_out[i] = loc[0] + 1
-        for i in range(len(arr2_in)):
-            loc = np.where( arr2_in[i] == u)[0]
-            if len(loc) > 0:
-                arr2_out[i] = loc[0] + 1
-            else:
-                ## it can happen that arr2 has values which arr1 doesn't
+        arr1 = np.asarray( arr1_in )
+        arr2 = np.asarray( arr2_in )
 
-                ## append the new typ into u
-                u=np.append(u, arr2_in[i] )
-                loc = np.where( arr2_in[i] == u)[0]
-                arr2_out[i] = loc[0]+1
+        ## find unique values for both arrays combined
+        all_vals = np.concatenate((arr1, arr2))
+        u, p = np.unique( all_vals, return_inverse=True )
 
-        arr1_out = np.intc( arr1_out )
-        arr2_out = np.intc( arr2_out )
-
-        return arr1_out, arr2_out
+        ## p contains indices of the combined unique values,
+        ## split into portions according to size of arrays
+        return np.intc( p[:len(arr1)] + 1), np.intc( p[len(arr1):] + 1)
 
     def get_version( self ):
         '''
         obtain the IRA library version
         '''
         self.lib.libira_get_version.restype = None
-        self.lib.libira_get_version.argtypes = [ c_char_p, POINTER(c_int) ]
+        self.lib.libira_get_version.argtypes = [ c_char_p, POINTER(c_long) ]
         cstring = (c_char*10)()
-        cdate = c_int()
+        cdate = c_long()
 
         self.lib.libira_get_version( cstring, cdate )
 
