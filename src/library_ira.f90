@@ -530,7 +530,7 @@ end subroutine libira_cshda_svd
 !!
 !! C header:
 !!~~~~~~~~~~~~~~~~~~~~~~~~~{.c}
-!! void libira_get_version( char *string, int *date );
+!! void libira_get_version( char *string, long *date );
 !!~~~~~~~~~~~~~~~~~~~~~~~~~
 !!
 !! @param[out] cstring(10) :: version string

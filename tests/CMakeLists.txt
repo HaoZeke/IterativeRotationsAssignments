@@ -62,3 +62,6 @@ set_target_properties(collinear_basis PROPERTIES
 target_compile_options(collinear_basis PRIVATE -ffree-line-length-0)
 target_link_libraries(collinear_basis PRIVATE ira_bounds)
 add_test(NAME collinear_basis COMMAND collinear_basis)
+add_executable(c_abi_contract c_abi_contract.c)
+target_link_libraries(c_abi_contract PRIVATE ira)
+add_test(NAME c_abi_contract COMMAND c_abi_contract)

@@ -4,7 +4,7 @@
 ## -cpp is safe here: IRA has no Fortran submodules.
 
 project('ira', ['c', 'fortran'],
-  version: '1.2.1',
+  version: '2.2.0',
   meson_version: '>= 0.60.0',
   default_options: [
     'fortran_std=none',
@@ -22,7 +22,7 @@ if not lapack_dep.found()
   lapack_dep = fc.find_library('lapack', required: true)
 endif
 
-fortran_args = []
+fortran_args = ['-DSTRVERSION="' + meson.project_version() + '"', '-DDATEVERSION=20250911']
 if fc.get_id() == 'gcc'
   fortran_args += ['-ffree-line-length-none', '-cpp']
 elif fc.get_id() == 'intel' or fc.get_id() == 'intel-llvm'
@@ -30,18 +30,22 @@ elif fc.get_id() == 'intel' or fc.get_id() == 'intel-llvm'
 endif
 
 ira_sources = files(
+  'src/m_ira_version.f90',
   'src/ira_precision.f90',
   'src/timer.f90',
-  'src/sofi_tools.f90',
-  'src/err_module.f90',
-  'src/version.f90',
+  'src/m_ira_tools.f90',
+  'src/m_sofi_tools.f90',
+  'src/m_ira_error.f90',
   'src/sorting_module.f90',
-  'src/set_candidate.f90',
-  'src/cshda.f90',
-  'src/ira_routines.f90',
-  'src/sofi_routines.f90',
+  'src/m_set_candidate.f90',
+  'src/m_cshda.f90',
+  'src/m_ira_routines.f90',
+  'src/m_sofi_routines.f90',
+  'src/ira_mod.f90',
   'src/library_ira.f90',
   'src/library_sofi.f90',
+  'src/ira_external.f90',
+  'src/sofi_external.f90',
 )
 
 ira_inc = include_directories('interface')
@@ -63,3 +67,8 @@ ira_dep = declare_dependency(
 )
 
 meson.override_dependency('ira', ira_dep)
+
+ira_abi_contract = executable('ira-c-abi-contract', 'tests/c_abi_contract.c',
+  dependencies: ira_dep,
+)
+test('ira-c-abi-contract', ira_abi_contract)

@@ -13,7 +13,7 @@ project(ira
 
 # optimize for native machine
 option(IRA_ENABLE_NATIVE_OPTIMIZATION
-  "optimize IRA for native CPU (this adds flags: '-march=native -ffast-math' or equivalent)" ON)
+  "optimize IRA for native CPU (this adds flags: '-march=native -ffast-math' or equivalent)" OFF)
 
 # optionally build tests
 option( IRA_BUILD_TESTS "build basic IRA tests" OFF )
@@ -59,16 +59,6 @@ if(ff0)
 else()
 endif()
 #
-check_fortran_compiler_flag( "-funroll-loops" unroll_loops )
-if(unroll_loops)
-  list(APPEND flagstr "-funroll-loops" )
-endif()
-#
-check_fortran_compiler_flag( "-Ofast" Ofast )
-if(Ofast)
-  list(APPEND flagstr "-Ofast" )
-endif()
-#
 if( IRA_ENABLE_NATIVE_OPTIMIZATION )
   check_fortran_compiler_flag( "-ffast-math" fast_math )
   if(fast_math)
@@ -102,6 +92,7 @@ set_target_properties( ${PROJECT_NAME}
   OUTPUT_NAME "${PROJECT_NAME}"
   VERSION "${PROJECT_VERSION}"
   SOVERSION "${PROJECT_VERSION_MAJOR}"
+  NO_SONAME OFF
   )
 # compile flags
 target_compile_options( ${PROJECT_NAME}
@@ -127,6 +118,7 @@ set(alltargets "")
 list(APPEND alltargets "${PROJECT_NAME}" )
 
 
+# C enables the thread dependency checks required by static BLAS.
 # find lapack/blas
 find_package(LAPACK)
 # set(LAPACK_FOUND False) ### test lapack not found
@@ -136,8 +128,8 @@ set(LAPACKLIB_STR "")
 # link lapack
 if(${LAPACK_FOUND})
   target_link_libraries( ${PROJECT_NAME} PUBLIC ${LAPACK_LIBRARIES})
-  # the "-l" prefix is set here, so the @LAPACK_STR@ in template.pc is empty when local lapack is used
-  set(LAPACKLIB_STR "-l${LAPACK_LIBRARIES}")
+  # Keep full library paths and linker options from LAPACK discovery.
+  string(REPLACE ";" " " LAPACKLIB_STR "${LAPACK_LIBRARIES}")
 else()
   # compile and link the local lapack files
   message(STATUS "IRA :: LAPACK library not found. Compiling local version (un-optimised).")
@@ -148,8 +140,6 @@ else()
   # add lap_local target to the exported targets
   list(APPEND alltargets "lap_local" )
 endif()
-
-
 if(IRA_BUILD_TESTS)
   add_subdirectory(tests)
 endif()
@@ -242,4 +232,3 @@ else()
     NAMESPACE "${PROJECT_NAME}::"
     )
 endif()
-

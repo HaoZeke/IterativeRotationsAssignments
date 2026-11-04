@@ -3,7 +3,7 @@
 
 int main(){
   long i;
-  char str[5];
+  char str[6];
   libira_get_version( str, &i );
 
   printf( "%li\n", i );

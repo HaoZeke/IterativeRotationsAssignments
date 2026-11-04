@@ -37,6 +37,11 @@ Using the conda-forge channel, you can download and install the ``ira_mod`` pyth
 Other build tools
 -----------------
 
+The C interface declares ``libira_get_version(char *, long *)``. Its version
+buffer holds six bytes, including the terminating null character. The date
+uses C ``long``; callers using the older ``int`` declaration must update that
+argument. ``libira_get_nmax()`` remains available for sizing SOFI output arrays.
+
 Other build tools are available, use one of the following:
 
 .. tab-set::
@@ -63,7 +68,7 @@ Other build tools are available, use one of the following:
       The available options are:
 
       * ``-DIRA_BUILD_TESTS``: build some simple tests (default OFF);
-      * ``-DIRA_ENABLE_NATIVE_OPTIMIZATION`` pass the compiler flags "-march=native -ffast-math" or equivalent (default ON).
+      * ``-DIRA_ENABLE_NATIVE_OPTIMIZATION`` pass the compiler flags "-march=native -ffast-math" or equivalent (default OFF). Architecture and optimization otherwise follow the configured toolchain.
 
       To install the library and module files to a particular location, do:
 

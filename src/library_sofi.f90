@@ -1003,7 +1003,7 @@ end subroutine libira_check_collinear
 
 
 !> @details
-!! Return the value of nmax from sofi_tools.f90.
+!! Return the value of nmax from m_sofi_tools.
 !! Callers of libira_compute_all must pre-allocate all output arrays
 !! to at least this size.
 !!
@@ -1014,7 +1014,7 @@ end subroutine libira_check_collinear
 !!
 function libira_get_nmax() result(val) bind(C, name="libira_get_nmax")
   use, intrinsic :: iso_c_binding
-  use sofi_tools, only: nmax
+  use m_sofi_tools, only: nmax
   implicit none
   integer(c_int) :: val
   val = int(nmax, c_int)
