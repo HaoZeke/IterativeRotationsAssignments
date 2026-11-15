@@ -683,6 +683,7 @@ contains
     integer(ip), dimension(3) :: gamma_idx
     integer(ip) :: count
     integer(ip) :: ord(nat1)
+    integer(ip) :: basis_i, basis_j
 
     ierr = ERR_OTHER
 
@@ -768,6 +769,9 @@ contains
        !! as possible, therefore the atoms which set them should have as low
        !! distortions as possible.
        !!
+       fail = .true.
+       basis_i = 0
+       basis_j = 0
        do i = 1, nat1
           do j = 1, nat1
              if (i == j) cycle
@@ -776,11 +780,28 @@ contains
              ! write(*,*) coords1(:,j)
              ! write(*,*) i,j
              call set_orthonorm_bas(coords1(:, i), coords1(:, j), beta, fail)
-             !! exit on first non-failed basis
-             if (.not. fail) exit
+             !! exit on first non-failed basis. After a normal loop exit the
+             !! index is nat+1, so keep the successful pair separately.
+             if (.not. fail) then
+                basis_i = i
+                basis_j = j
+                exit
+             end if
           end do
           if (.not. fail) exit
        end do
+       if (basis_i < 1 .or. basis_j < 1) then
+          !! Collinear centres have no basis. Restore this centre and try
+          !! the next one instead of reading coords1(:, nat+1).
+          call permute_real_2d_back(nat1, 3, coords1, ord)
+          call permute_int_1d_back(nat1, typ1, ord)
+          do i = 1, nat1
+             coords1(:, i) = coords1(:, i) + rc1
+          end do
+          cycle
+       end if
+       i = basis_i
+       j = basis_j
        ! write(*,*) '1 in',i,j
        ! write(*,*) i, coords1(:,i)
        ! write(*,*) j, coords1(:,j)
